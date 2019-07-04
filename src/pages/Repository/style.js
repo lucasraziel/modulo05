@@ -10,6 +10,15 @@ export const Loading = styled.div`
   height: 100vh;
 `;
 
+export const Filter = styled.select`
+  min-width: 200px;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  border-right: 0;
+  border-left: 0;
+  margin-top: 20px;
+`;
+
 export const Owner = styled.header`
   display: flex;
   flex-direction: column;
@@ -89,4 +98,22 @@ export const IssueList = styled.ul`
       }
     }
   }
+`;
+
+export const Pages = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+`;
+
+export const PageButton = styled.button`
+  background: #7159c1;
+  border: 0;
+  padding: 0 15px;
+  margin-left: 10px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
 `;

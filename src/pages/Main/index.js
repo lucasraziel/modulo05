@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 
 import { FaGithubAlt, FaPlus, FaSpinner } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { Form, SubmitButton, List } from './style';
+import { Form, SubmitButton, List, TextInput, ErrorMessage } from './style';
 import Container from '../../Components/Container';
 
 import api from '../../services/api';
@@ -12,6 +12,7 @@ export default class Main extends Component {
     newRepo: '',
     repositories: [],
     loading: false,
+    error: '',
   };
 
   componentDidMount() {
@@ -31,23 +32,43 @@ export default class Main extends Component {
   }
 
   handleSubmit = async e => {
-    e.preventDefault();
+    try {
+      e.preventDefault();
 
-    this.setState({ loading: true });
+      this.setState({ loading: true });
 
-    const { newRepo, repositories } = this.state;
+      const { newRepo, repositories } = this.state;
 
-    const response = await api.get(`/repos/${newRepo}`);
+      if (!newRepo) {
+        throw new Error('You should inform a repository');
+      }
 
-    const data = {
-      name: response.data.full_name,
-    };
+      const repositoryExists = repositories.find(
+        repository => newRepo === repository.name
+      );
 
-    this.setState({
-      repositories: [...repositories, data],
-      newRepo: '',
-      loading: false,
-    });
+      if (repositoryExists) {
+        throw new Error('Repository already in page');
+      }
+
+      const response = await api.get(`/repos/${newRepo}`);
+
+      const data = {
+        name: response.data.full_name,
+      };
+
+      this.setState({
+        repositories: [...repositories, data],
+        newRepo: '',
+        loading: false,
+        error: '',
+      });
+    } catch (error) {
+      console.log(error.message);
+      this.setState({ error: error.message });
+    } finally {
+      this.setState({ loading: false });
+    }
   };
 
   handleInputChange = e => {
@@ -55,7 +76,7 @@ export default class Main extends Component {
   };
 
   render() {
-    const { newRepo, loading, repositories } = this.state;
+    const { newRepo, loading, repositories, error } = this.state;
     return (
       <Container>
         <h1>
@@ -63,12 +84,14 @@ export default class Main extends Component {
           Repositórios
         </h1>
         <Form onSubmit={this.handleSubmit}>
-          <input
+          <TextInput
             type="text"
             placeholder="Adicionar Repositório"
             value={newRepo}
             onChange={this.handleInputChange}
+            error={error}
           />
+
           <SubmitButton loading={loading}>
             {loading ? (
               <FaSpinner color="#fff" size={14} />
@@ -77,6 +100,7 @@ export default class Main extends Component {
             )}
           </SubmitButton>
         </Form>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
         <List>
           {repositories.map(repository => (
             <li key={repository.name}>

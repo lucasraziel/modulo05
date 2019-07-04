@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import { Loading, Owner, IssueList } from './style';
+import { Loading, Owner, IssueList, Filter, Pages, PageButton } from './style';
 import Container from '../../Components/Container';
 
 export default class Repository extends Component {
@@ -18,17 +18,41 @@ export default class Repository extends Component {
     repository: {},
     issues: [],
     loading: true,
+    page: 1,
+    state: 'open',
   };
 
   async componentDidMount() {
+    this.load();
+  }
+
+  handleChange = async e => {
+    await this.setState({ page: 1, loading: true });
+    this.load(1, e.state.value);
+  };
+
+  handlePages = async next => {
+    const { page } = this.state;
+    if (next) {
+      await this.setState({ page: page + 1, loading: true });
+      this.load();
+    } else {
+      await this.setState({ page: page - 1, loading: true });
+      this.load();
+    }
+  };
+
+  load = async () => {
     const { match } = this.props;
+
+    const { page, state } = this.state;
 
     const repoName = decodeURIComponent(match.params.repository);
 
     const [repository, issues] = await Promise.all([
       api.get(`/repos/${repoName}`),
       api.get(`/repos/${repoName}/issues`, {
-        params: { state: 'open', per_page: 5 },
+        params: { state, per_page: 30, page },
       }),
     ]);
 
@@ -36,11 +60,12 @@ export default class Repository extends Component {
       repository: repository.data,
       issues: issues.data,
       loading: false,
+      state,
     });
-  }
+  };
 
   render() {
-    const { repository, issues, loading } = this.state;
+    const { repository, issues, loading, page } = this.state;
     if (loading) {
       return <Loading>Carregando</Loading>;
     }
@@ -51,6 +76,12 @@ export default class Repository extends Component {
           <img src={repository.owner.avatar_url} alt={repository.owner.login} />
           <h1>{repository.name}</h1>
           <p>{repository.description}</p>
+          <Filter onChange={this.handleChange}>
+            <option value="all">Filter State</option>
+            <option value="all">All</option>
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </Filter>
         </Owner>
 
         <IssueList>
@@ -69,6 +100,14 @@ export default class Repository extends Component {
             </li>
           ))}
         </IssueList>
+        <Pages>
+          {page > 1 && (
+            <PageButton onClick={() => this.handlePages(false)}>
+              Previous
+            </PageButton>
+          )}
+          <PageButton onClick={() => this.handlePages(true)}>Next</PageButton>
+        </Pages>
       </Container>
     );
   }
